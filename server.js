@@ -5,10 +5,15 @@ app.use(express.json())
 const registeredUsers = {}
 
 app.post("/register", (req, res) => {
-    const { username, jobId } = req.body
+    const { username, jobId, score, raritySummary } = req.body
     if (!username || !jobId) return res.status(400).json({ error: "Missing fields" })
-    registeredUsers[username] = { jobId, timestamp: Date.now() }
-    console.log(`Registered: ${username} | Job: ${jobId}`)
+    registeredUsers[username] = {
+        jobId,
+        timestamp: Date.now(),
+        score: score || 0,
+        raritySummary: raritySummary || {}
+    }
+    console.log(`Registered: ${username} | Job: ${jobId} | Score: ${score || 0}`)
     res.json({ success: true })
 })
 
@@ -32,6 +37,17 @@ app.get("/jobs", (req, res) => {
         }
     }
     res.json({ jobs: active })
+})
+
+app.get("/scores", (req, res) => {
+    const now = Date.now()
+    const active = {}
+    for (const [username, data] of Object.entries(registeredUsers)) {
+        if (now - data.timestamp < 300000) {
+            active[username] = data.score || 0
+        }
+    }
+    res.json({ scores: active })
 })
 
 app.post("/heartbeat", (req, res) => {
